@@ -1,3 +1,4 @@
+```javascript
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var ic = ee.ImageCollection("LANDSAT/LT05/C01/T1_SR"),
     geometry = /* color: #d63000 */ee.Geometry.Point([-116.806640625, 35.02999636902566]),
@@ -241,6 +242,6 @@ Export.image.toDrive({
   scale: 30,
   fileFormat: 'GeoTIFF',
 })
-  
+```  
 
 
