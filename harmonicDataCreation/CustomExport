@@ -37,10 +37,10 @@ var ic = ee.ImageCollection("LANDSAT/LT05/C01/T1_SR"),
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // Model Parameters
 {
-var combo=["b","short"]
+var combo=["w","short"]
 var path=17
-var row=37
-var shp=shp1737
+var row=39
+var shp=shp1739
 //%%%%%%%%%%%%%%%%%%%%%9%%%%%%%%%%%%%%%%%%%%%%%
 var feature={
   "nir":["B4","NIR"],
@@ -69,7 +69,7 @@ var avgRange=3
 var mifpar=5
 var tolpar=3
 // Preprocessing parameters 
-var Foo = require('users/sobata5632/HarmonicData:HarmonicData.js');//Module for this data. 
+var Foo = require('users/sobata5632/HarmonicData:harmonicDataCreation/HarmonicData.js');//Module for this data. 
 var bands=['B1','B2','B3','B4','B5','B6','B7','pixel_qa']// Set up bands for landsat 5 &7
 var bands8=['B1','B2','B3','B4','B5','B6','B7','pixel_qa']// Set up bands for landsat 8
 }
@@ -267,6 +267,7 @@ var bNamesFeature = ee.FeatureCollection(bNames.map(function(elem){
 print(bNamesFeature);
 Export.table.toDrive({
     collection: bNamesFeature,
+    folder:"p"+path+"r"+row,
     description: feature[combo[0]][1]+"_p"+path+"r"+row+"_"+filS2D+"-"+filE2D+"_bNames",
     fileFormat: 'CSV'
   });
