@@ -1,0 +1,255 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var ic = ee.ImageCollection("LANDSAT/LT05/C01/T1_SR"),
+    tiny = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-81.61639551737136, 32.722195859625565],
+          [-81.61639551737136, 32.72160351425631],
+          [-81.6150155208332, 32.72160351425631],
+          [-81.6150155208332, 32.722195859625565]]], null, false),
+    lt7t1 = ee.ImageCollection("LANDSAT/LE07/C01/T1_SR"),
+    lt8t1 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR"),
+    l5toa = ee.ImageCollection("LANDSAT/LT05/C01/T1_TOA"),
+    l7toa = ee.ImageCollection("LANDSAT/LE07/C01/T1_TOA"),
+    l8toa = ee.ImageCollection("LANDSAT/LC08/C01/T1_TOA"),
+    table = ee.FeatureCollection("users/sobata5632/WRS2_descending"),
+    shp1737 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p17r37-points"),
+    shp1838 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p18r38-points"),
+    shp1738 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p17r38-points"),
+    shp1739 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p17r39-points"),
+    shp1938 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p19r38-points"),
+    shp1836 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p18r36-points"),
+    shp1837 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p18r37-points"),
+    shp1839 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p18r39-points"),
+    shp1936 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p19r36-points"),
+    shp1937 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p19r37-points"),
+    shp1939 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p19r39-points"),
+    shp2036 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p20r36-points");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// ##################################################
+//  This script creates a raster data that contains (1) Coefficients of the harmoinic regression on the dense time series Landsat 5 and 7 imagery. 
+// ##################################################
+//  Author: Shingo Obata
+//  Project: Harmonic regression on dense Landsat imagery
+//  Copyright: Copyright 2019, Shingo Obata
+//  Credits: Shingo Obata
+//  License: None
+//  Version: 1.0.0
+//  Maintainer: Shingo Obata
+//  Email: s.obata5632@gmail.com
+//  Status: Completed
+//  Last modified on 11/26/19
+// ##################################################
+
+
+//----------------------------------------------
+// Parameters setting
+//----------------------------------------------
+// Model Parameters setting
+{
+// Preprocessing parameters 
+var HarmonicData = require('users/sobata5632/LandsatHarmonic:HarmonicData.js');//Module for this data. 
+var bands=['B1','B2','B3','B4','B5','B6','B7','pixel_qa']// Set up bands for landsat 5 &7
+var bands8=['B1','B2','B3','B4','B5','B6','B7','pixel_qa']// Set up bands for landsat 8
+//Specify the bands to be created. For each run the output is made for specific combination of TC band and time range.  
+//specify the types of tc.
+var feature={
+  // "nir":["B4","NIR"],
+  // "ndvi":["NDVI","ndvi"],
+  "w":["wetness","tcw"],
+  "b":["brightness","tcb"],
+  "g":["greenness","tcg"]}
+var pod={"long":["1984-01-01","2016-12-31"],"short":["2014-01-01","2016-12-31"]}//time range.
+// "combo" specifies the combination of the bands and time range to be used for further computation.
+var combo=["w","short"]
+//specify the combination of path and row. 
+var path=17
+var row=39
+
+var startdate=pod[combo[1]][0]
+var enddate=pod[combo[1]][1]
+var filterStart=ee.Date(startdate)
+var filterEnd=ee.Date(enddate)
+// these two lines of code is to retrieve the starting year and ending year of the computation. Used when exporting the data.
+var filS2D=ee.String(filterStart.get("year")).slice(2,4).getInfo()
+var filE2D=ee.String(filterEnd.get("year")).slice(2,4).getInfo()
+
+}
+
+//----------------------------------------------
+// Create a boundary layer
+//----------------------------------------------
+{
+var shape=table
+.filterMetadata('ROW','equals',row)
+.filterMetadata('PATH','equals',path)
+var center=shape.geometry().centroid()
+var expBounds=shape.geometry()
+Map.addLayer(expBounds)
+Map.centerObject(center,7);
+}
+
+
+
+//----------------------------------------------
+//Landsat 5 data processing
+//----------------------------------------------
+//The HarmonicData.landsat function performs following tasks to the input time series Landsat imagery.
+//1. Cloud mask
+//2. transform the raw band values to Tasseled cap components. 
+{
+var lt5=HarmonicData.landsat(
+  ic,//imgcol
+  center,//boundary
+  '1984-05-01',//sampletimestart
+  '2012-5-31',//sampletimestart
+  50,//cloudpct
+  bands,//bands
+  66,//masknum
+  '((R**2+SWIR1**2+SWIR2**2)/3)**0.5',//formula
+  'B3',//r
+  'B4',//nir
+  'B5',//swir1
+  'B7',//swir2
+  0.1,//alpha
+  '(alpha*NIR-R)/(alpha*NIR+R)',//formula_wdrvi,
+//from here for tc
+  ee.List(['B1','B2','B3','B4','B5','B7']),//toaRefBands, 
+  'BQA',//toaMaskband,
+  l5toa,//imgColTOA,
+  ee.Array([
+  [0.3037, 0.2793, 0.4743, 0.5585, 0.5082, 0.1863],
+  [-0.2848, -0.2435, -0.5436, 0.7243, 0.0840, -0.1800],
+  [0.1509, 0.1973, 0.3279, 0.3406, -0.7112, -0.4572],
+  [-0.8242, 0.0849, 0.4392, -0.0580, 0.2012, -0.2768],
+  [-0.3280, 0.0549, 0.1075, 0.1855, -0.4357, 0.8085],
+  [0.1084, -0.9022, 0.4120, 0.0573, -0.0251, 0.0238]
+]),//TCCoefficients,
+  672,//toaMaskNum1,
+  676,//toaMaskNum2,
+  680,//toaMaskNum3,
+  684,//toaMaskNum4
+  'brightness',
+  'greenness',
+  'wetness'
+  );
+
+//----------------------------------------------
+//Landsat 7 data processing
+//----------------------------------------------
+//The HarmonicData.landsat function performs following tasks to the input time series Landsat imagery.
+//1. Cloud mask
+//2. transform the raw band values to Tasseled cap components. 
+var lt7=HarmonicData.landsat(
+  lt7t1,//imgcol
+  center,//boundary
+  '2011-01-01',//sampletimestart
+  '2019-4-30',//sampletimestart
+  50,//cloudpct
+  bands,//bands
+  66,//masknum
+  '((R**2+SWIR1**2+SWIR2**2)/3)**0.5',//formula
+  'B3',//r
+  'B4',//nir
+  'B5',//swir1
+  'B7',//swir2
+  0.1,//alpha
+  '(alpha*NIR-R)/(alpha*NIR+R)',//formula_wdrvi
+//from here for tc
+  ee.List(['B1','B2','B3','B4','B5','B7']),//toaRefBands, 
+  'BQA',//toaMaskband,
+  l7toa,//imgColTOA,
+  ee.Array([
+  [0.3037, 0.2793, 0.4743, 0.5585, 0.5082, 0.1863],
+  [-0.2848, -0.2435, -0.5436, 0.7243, 0.0840, -0.1800],
+  [0.1509, 0.1973, 0.3279, 0.3406, -0.7112, -0.4572],
+  [-0.8242, 0.0849, 0.4392, -0.0580, 0.2012, -0.2768],
+  [-0.3280, 0.0549, 0.1075, 0.1855, -0.4357, 0.8085],
+  [0.1084, -0.9022, 0.4120, 0.0573, -0.0251, 0.0238]
+]),//TCCoefficients,
+  672,//toaMaskNum1,
+  676,//toaMaskNum2,
+  680,//toaMaskNum3,
+  684,//toaMaskNum4
+  'brightness',
+  'greenness',
+  'wetness'
+  );
+}
+
+//--------------------------------------------------
+// Filter the data in a time range and band type 
+//--------------------------------------------------
+// filter the data in a time range and band type determined by the parameters
+var tc=ee.ImageCollection(
+  lt5[2].merge(lt7[2])
+  )
+  .filterDate(filterStart,filterEnd).sort('system:time_start')
+  .select(feature[combo[0]][0])//select the tc band selected in the parameter section.
+print(tc)
+
+
+//--------------------------------------------------
+// Harmonic regression
+//--------------------------------------------------
+//Function to add constant and time variables to imagecollection
+var addVariables = function(image) {
+  // Compute time in fractional years since the epoch.
+  var years = image.date().difference(ee.Date(startdate), 'year');
+  return image
+    .addBands(ee.Image(years).rename('t'))    // Time band.
+    .addBands(ee.Image.constant(1))           // Constant band.
+    .float()
+};
+// Add variables for time and a constant to Merged IFZ
+var tcBand=tc.select(feature[combo[0]][0]).map(addVariables)
+// Apply HarmonicData.harmonicRegressionFit function. This function performs the harmonic regression on the input imagecollection. input imagecollection has to be single layer.
+//Prerequisite to run this function is that the imagecollection contains 4 vindependent bands and 1 dependent bands (imagecollection value).
+// The outputs of the function are 3 objects.
+//1. Three-bands ImageCollection comprised of original time series value of the selected band, fitted value of the harmonic regression. squared error of the estimation.  
+//2. Single band image of which pixel value represents the amplitude of the harmonic regression.
+//3. Four-bands image comprised of coefficients of the harmonic regression.
+var tcHarmonic=HarmonicData.harmonicRegressionFit(['constant', 't', 'cos', 'sin'],feature[combo[0]][0],tcBand,3)
+print(tcHarmonic,"tcHarmonic")
+//compute the statistics from fitted value.
+var maximum=tcHarmonic[0].select("HarmonicFit").max()
+var minimum=tcHarmonic[0].select("HarmonicFit").min()
+var mean=tcHarmonic[0].select("HarmonicFit").mean()
+var rmse=tcHarmonic[0].select("SE").sum().sqrt()
+//set band name.
+Map.addLayer(maximum,{min:-0.1,max:0.1,})
+var bType=["max","min","mean","rmse","amp"]
+var bNames=bType.map(function(elem){
+  var elemComp=feature[combo[0]][1]+"_p"+path+"r"+row+"_"+filS2D+"-"+filE2D+"_"+elem
+  return elemComp
+})
+var outRaster=maximum.addBands([minimum,mean,rmse,tcHarmonic[1]]).rename(bType).clip(expBounds)
+// //===================================================
+// // Export
+// //===================================================
+Export.image.toDrive({
+  image: outRaster,
+  region: expBounds,
+  folder:"p"+path+"r"+row,
+  description:feature[combo[0]][1]+"_p"+path+"r"+row+"_"+filS2D+"-"+filE2D,
+  //maxPixels:10e12,
+  scale: 30,
+  fileFormat: 'GeoTIFF'
+})
+  
+// The list of band name is also exported. 
+var bNamesFeature = ee.FeatureCollection(bNames.map(function(elem){
+  return ee.Feature(null, {bName:elem})
+}));
+print(bNamesFeature);
+Export.table.toDrive({
+    collection: bNamesFeature,
+    folder:"p"+path+"r"+row,
+    description: feature[combo[0]][1]+"_p"+path+"r"+row+"_"+filS2D+"-"+filE2D+"_bNames",
+    fileFormat: 'CSV'
+  });
