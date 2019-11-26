@@ -247,7 +247,7 @@ return([masked_interest,ndvi,TC])
 
 
 
-exports.sandbox=function(a){
-  return a
+exports.sandbox=function(a,b){
+  return [a,b]
 }
 
