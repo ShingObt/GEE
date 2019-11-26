@@ -248,5 +248,5 @@ return([masked_interest,ndvi,TC])
 
 
 exports.sandbox=function(a,b,c){
-  return a*b*c
+  return a+b+c
 }
