@@ -32,7 +32,6 @@ var ic = ee.ImageCollection("LANDSAT/LT05/C01/T1_SR"),
     shp2036 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p20r36-points");
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 
-//Map.addLayer(fiaFP,{},"FP")
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // Parameters setting
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
