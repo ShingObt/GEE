@@ -31,12 +31,11 @@ var ic = ee.ImageCollection("LANDSAT/LT05/C01/T1_SR"),
     shp1939 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p19r39-points"),
     shp2036 = ee.FeatureCollection("users/sobata5632/backtracking/bted_p20r36-points");
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
-
 // ##################################################
 //  This script creates a raster data that contains (1) Coefficients of the harmoinic regression on the dense time series Landsat 5 and 7 imagery. 
 // ##################################################
 //  Author: Shingo Obata
-//  Project: Second paper
+//  Project: Harmonic regression on dense Landsat imagery
 //  Copyright: Copyright 2019, Shingo Obata
 //  Credits: Shingo Obata
 //  License: None
@@ -209,26 +208,30 @@ var addVariables = function(image) {
 };
 // Add variables for time and a constant to Merged IFZ
 var tcBand=tc.select(feature[combo[0]][0]).map(addVariables)
-// Apply HarmonicData.harmonicRegressionFit function. This function performs the harmonic regression on the input imagecollection.
-//Prerequisite to run this function is that the imagecollection contains 
+// Apply HarmonicData.harmonicRegressionFit function. This function performs the harmonic regression on the input imagecollection. input imagecollection has to be single layer.
+//Prerequisite to run this function is that the imagecollection contains 4 vindependent bands and 1 dependent bands (imagecollection value).
+// The outputs of the function are 3 objects.
+//1. Three-bands ImageCollection comprised of original time series value of the selected band, fitted value of the harmonic regression. squared error of the estimation.  
+//2. Single band image of which pixel value represents the amplitude of the harmonic regression.
+//3. Four-bands image comprised of coefficients of the harmonic regression.
 var tcHarmonic=HarmonicData.harmonicRegressionFit(['constant', 't', 'cos', 'sin'],feature[combo[0]][0],tcBand,3)
 print(tcHarmonic,"tcHarmonic")
+//compute the statistics from fitted value.
 var maximum=tcHarmonic[0].select("HarmonicFit").max()
 var minimum=tcHarmonic[0].select("HarmonicFit").min()
 var mean=tcHarmonic[0].select("HarmonicFit").mean()
 var rmse=tcHarmonic[0].select("SE").sum().sqrt()
-print(rmse)
+//set band name.
+Map.addLayer(maximum)
 var bType=["max","min","mean","rmse","amp"]
 var bNames=bType.map(function(elem){
   var elemComp=feature[combo[0]][1]+"_p"+path+"r"+row+"_"+filS2D+"-"+filE2D+"_"+elem
   return elemComp
 })
 var outRaster=maximum.addBands([minimum,mean,rmse,tcHarmonic[1]]).rename(bType).clip(expBounds)
-
 // //===================================================
-// // Extract time series TCW
+// // Export
 // //===================================================
-Map.addLayer(outRaster)
 Export.image.toDrive({
   image: outRaster,
   region: expBounds,
@@ -239,7 +242,7 @@ Export.image.toDrive({
   fileFormat: 'GeoTIFF'
 })
   
-
+// The list of band name is also exported. 
 var bNamesFeature = ee.FeatureCollection(bNames.map(function(elem){
   return ee.Feature(null, {bName:elem})
 }));
