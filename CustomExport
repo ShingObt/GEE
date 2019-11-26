@@ -35,13 +35,8 @@ var ic = ee.ImageCollection("LANDSAT/LT05/C01/T1_SR"),
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // Parameters setting
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-// Model Parameters
+// Model Parameters setting
 {
-var combo=["w","short"]//
-var path=17
-var row=39
-var shp=shp1739
-//%%%%%%%%%%%%%%%%%%%%%9%%%%%%%%%%%%%%%%%%%%%%%
 var feature={
   "nir":["B4","NIR"],
   "ndvi":["NDVI","ndvi"],
@@ -49,17 +44,12 @@ var feature={
   "b":["brightness","tcb"],
   "g":["greenness","tcg"]}
 var pod={"long":["1984-01-01","2016-12-31"],"short":["2014-01-01","2016-12-31"]}//period of time
-var upper=1300
-var lower=upper-1300
+var combo=["w","short"]
+var path=17
+var row=39
+
 var startdate=pod[combo[1]][0]
 var enddate=pod[combo[1]][1]
-print(shp)
-
-//print(shp.reduceColumns(ee.Reducer.toList(2),["X", "VPAAgg"]))
-var point=shp
-.filterMetadata("X","not_greater_than",upper)
-.filterMetadata("X","greater_than",lower)
-print(point)
 
 var filterStart=ee.Date(startdate)
 var filterEnd=ee.Date(enddate)
@@ -85,7 +75,6 @@ var shape=table
 var center=shape.geometry().centroid()
 var expBounds=shape.geometry()
 Map.addLayer(expBounds)
-Map.addLayer(point)
 //Map.addLayer(disty.select("b1"),
 //{min:1990,max:1992,palette:['000000', 'FFFF00', 'FFA500', 'FF4500', 'FF0000']},
 //"Last disturbance year")
