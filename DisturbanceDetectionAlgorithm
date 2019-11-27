@@ -1,0 +1,433 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var ic = ee.ImageCollection("LANDSAT/LT05/C01/T1_SR"),
+    boundary = /* color: #98ff00 */ee.Geometry.Point([-81.8536376953125, 31.58087527398549]),
+    lt7t1 = ee.ImageCollection("LANDSAT/LE07/C01/T1_SR"),
+    lt8t1 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR"),
+    l5toa = ee.ImageCollection("LANDSAT/LT05/C01/T1_TOA"),
+    boundary2 = /* color: #d63000 */ee.Geometry.Point([-82.74089097976685, 34.21375967079047]),
+    idf57 = ee.FeatureCollection("users/sobata5632/DisturbanceMap/idf57"),
+    idf8 = ee.FeatureCollection("users/sobata5632/DisturbanceMap/idf8"),
+    l7toa = ee.ImageCollection("LANDSAT/LE07/C01/T1_TOA"),
+    l8toa = ee.ImageCollection("LANDSAT/LC08/C01/T1_TOA"),
+    browsing = /* color: #d63000 */ee.Geometry.Point([-82.0652425289154, 31.188766930087212]),
+    boundaryInterest = /* color: #d63000 */ee.Geometry.Point([-82.69321114303989, 34.18261438821178]),
+    boundaryInterestClipper = /* color: #98ff00 */ee.Geometry.Polygon(
+        [[[-83.58207375290323, 33.899832617072775],
+          [-83.6008706736796, 33.84004075488385],
+          [-83.23634773971963, 33.84845262972213],
+          [-83.25883538010049, 34.04226594455135],
+          [-83.60430390121866, 34.04119911623187]]]),
+    table = ee.FeatureCollection("users/sobata5632/WRS2_descending"),
+    accasspoints = ee.FeatureCollection("users/sobata5632/accuracyassessment/AccAss_WholeStateMasked_GABoundary_ID");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+// Parameters setting
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\\
+// Model Parameters//
+{
+//var browsing=ee.Geometry.Point([-81.93066, 31.18088])
+Map.centerObject(browsing,13);//for checking arbitrary point
+var path=17
+var row=38
+var startdate='2004-01-01'//1984,1994,2004
+var enddate='2018-12-31'//2000,2010,2018
+var filterStart=ee.Date(startdate)
+var filterEnd=ee.Date(enddate)
+var outputDateEnd=ee.Date.fromYMD(filterEnd.get('year').subtract(2), filterEnd.get('month'), filterEnd.get('day'))
+var outputDateStart=ee.Date.fromYMD(filterStart.get('year').add(3), filterStart.get('month'), filterStart.get('day'))
+print(outputDateStart.format('yyyy'))
+print(ee.List([outputDateStart, outputDateEnd,filterStart,filterEnd]))
+var avgRange=3
+var mifpar=4
+var tolpar=3
+// Preprocessing parameters 
+var Foo = require('users/sobata5632/default:Modeles/DiDe2.js');//Module for this data. 
+var fc = ee.FeatureCollection(idf57)//common identified forest pixels for landsat 5 and 7
+var fc2=ee.FeatureCollection(idf57)//common identified forest pixels for landsat 5 and 7
+var fc3=ee.FeatureCollection(idf8)// identified forest pixels for landsat 8
+var bands=['B1','B2','B3','B4','B5','B6','B7','pixel_qa']// Set up bands for landsat 5 &7
+var bands8=['B1','B2','B3','B4','B5','B6','B7','pixel_qa']// Set up bands for landsat 8
+}
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+// Shapefile setting
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{
+var shape=table
+.filterMetadata('ROW','equals',row)
+.filterMetadata('PATH','equals',path)
+
+print(ee.Feature(shape))
+var center=shape.geometry().centroid()
+var expBounds=shape.geometry()
+print(expBounds)
+print(boundaryInterestClipper)
+Map.addLayer(center)
+Map.addLayer(expBounds)
+}
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+// IMAGE PROCESSING
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+// using in foo.7 module, process Landsat 5,7 TM and 8 OLI data to IFZ and TC.
+{
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//Landsat 5 data processing
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+var lt5=Foo.landsat(
+  ic,//imgcol
+  boundary,//boundary
+  center,
+  '1984-05-01',//sampletimestart
+  '2012-5-31',//sampletimestart
+  99,//cloudpct
+  bands,//bands
+  66,//masknum
+  '2011-04-01',//sampletimestart
+  '2011-08-31',//sampletimeend
+  1,//cloudpct_sample
+  fc,//ifr
+  '((R**2+SWIR1**2+SWIR2**2)/3)**0.5',//formula
+  'B3',//r
+  'B4',//nir
+  'B5',//swir1
+  'B7',//swir2
+  fc,//geometry
+  0.1,//alpha
+  '(alpha*NIR-R)/(alpha*NIR+R)',//formula_wdrvi,
+//from here for tc
+  ee.List(['B1','B2','B3','B4','B5','B7']),//toaRefBands, 
+  'BQA',//toaMaskband,
+  l5toa,//imgColTOA,
+  center,//boundary2
+  ee.Array([
+  [0.3037, 0.2793, 0.4743, 0.5585, 0.5082, 0.1863],
+  [-0.2848, -0.2435, -0.5436, 0.7243, 0.0840, -0.1800],
+  [0.1509, 0.1973, 0.3279, 0.3406, -0.7112, -0.4572],
+  [-0.8242, 0.0849, 0.4392, -0.0580, 0.2012, -0.2768],
+  [-0.3280, 0.0549, 0.1075, 0.1855, -0.4357, 0.8085],
+  [0.1084, -0.9022, 0.4120, 0.0573, -0.0251, 0.0238]
+]),//TCCoefficients,
+  672,//toaMaskNum1,
+  676,//toaMaskNum2,
+  680,//toaMaskNum3,
+  684,//toaMaskNum4
+  'brightness',
+  'greenness',
+  'wetness'
+  );
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//Landsat 7 data processing
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+var lt7=Foo.landsat(
+  lt7t1,//imgcol
+  boundary,//boundary
+  center,
+  '2011-01-01',//sampletimestart
+  '2019-4-30',//sampletimestart
+  99,//cloudpct
+  bands,//bands
+  66,//masknum
+  '2011-04-01',//sampletimestart
+  '2011-08-31',//sampletimeend
+  1,//cloudpct_sample
+  fc,//ifr
+  '((R**2+SWIR1**2+SWIR2**2)/3)**0.5',//formula
+  'B3',//r
+  'B4',//nir
+  'B5',//swir1
+  'B7',//swir2
+  fc2,//geometry
+  0.1,//alpha
+  '(alpha*NIR-R)/(alpha*NIR+R)',//formula_wdrvi
+//from here for tc
+  ee.List(['B1','B2','B3','B4','B5','B7']),//toaRefBands, 
+  'BQA',//toaMaskband,
+  l7toa,//imgColTOA,
+  center,//boundary2
+  ee.Array([
+  [0.3037, 0.2793, 0.4743, 0.5585, 0.5082, 0.1863],
+  [-0.2848, -0.2435, -0.5436, 0.7243, 0.0840, -0.1800],
+  [0.1509, 0.1973, 0.3279, 0.3406, -0.7112, -0.4572],
+  [-0.8242, 0.0849, 0.4392, -0.0580, 0.2012, -0.2768],
+  [-0.3280, 0.0549, 0.1075, 0.1855, -0.4357, 0.8085],
+  [0.1084, -0.9022, 0.4120, 0.0573, -0.0251, 0.0238]
+]),//TCCoefficients,
+  672,//toaMaskNum1,
+  676,//toaMaskNum2,
+  680,//toaMaskNum3,
+  684,//toaMaskNum4
+  'brightness',
+  'greenness',
+  'wetness'
+  );
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//Landsat 8 data processing
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+var lt8=Foo.landsat(
+  lt8t1,//imgcol
+  boundary,//boundary
+  center,
+  '2013-05-01',//sampletimestart
+  '2018-08-31',//sampletimeend
+  0.5,//cloudpct
+  bands8,//bands
+  322,//masknum
+  '2014-04-01',//sampletimestart
+  '2014-08-31',//sampletimeend
+  1,//cloudpct_sample
+  fc3,//ifr
+  '((R**2+SWIR1**2+SWIR2**2)/3)**0.5',//formula
+  'B4',//r
+  'B5',//nir
+  'B6',//swir1
+  'B7',//swir2
+  fc2,//geometry
+  0.1,//alpha
+  '(alpha*NIR-R)/(alpha*NIR+R)',//formula_wdrvi
+//from here for tc
+  ee.List(['B2','B3','B4','B5','B6','B7']),//toaRefBands, 
+  'BQA',//toaMaskband,
+  l8toa,//imgColTOA,
+  center,//boundary2
+  ee.Array([
+  [0.3029, 0.2786, 0.4733, 0.5599, 0.5080, 0.1872],
+  [-0.2941, -0.2430, -0.5424, 0.7276, 0.0713, -0.1608],
+  [0.1511, 0.1973, 0.3283, 0.3407, -0.7117, -0.4559],
+  [-0.8239, 0.0849, 0.4396, -0.0580, 0.2013, -0.2773],
+  [-0.3294, 0.0557, 0.1056, 0.1855, -0.4349, 0.8085],
+  [0.1079, -0.9023, 0.4119, 0.0575, -0.0259, 0.0252]
+]),//TCCoefficients,
+  2720,//toaMaskNum1,
+  2724,//toaMaskNum2,
+  2728,//toaMaskNum3,
+  2732,//toaMaskNum4
+  'brightness',
+  'greenness',
+  'wetness'
+  );
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// Merge different IFZ created from Landsat 5, 7 and 8
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//Merge data processed from the different sensors.
+{
+// merge ifz
+var MergeIFZ=ee.ImageCollection(lt5[0].merge(lt7[0]).merge(lt8[0]))
+.filterDate(filterStart,filterEnd)
+.sort('system:time_start')//to sort in the order of the date the imagery was taken regardless of the sensor.
+// merge tasseled cap
+var tc=ee.ImageCollection(
+  lt5[3].merge(lt7[3]).merge(lt8[3]))
+  .filterDate(filterStart,filterEnd).sort('system:time_start')
+  .select(['brightness','greenness','wetness'])
+;
+
+//Function to add constant and time variables to imagecollection
+var addVariables = function(image) {
+  // Compute time in fractional years since the epoch.
+  var years = image.date().difference(ee.Date('1984-01-01'), 'year');
+  return image
+    .addBands(ee.Image(years).rename('t'))    // Time band.
+    .addBands(ee.Image.constant(1))           // Constant band.
+    .float()
+};
+// Add variables for time and a constant to Merged IFZ
+var MergeIFZ=MergeIFZ.map(function(image) {
+  return image.rename('IFZ')
+  .updateMask(image.lt(30));
+}).map(addVariables)
+// Add variables for time and a constant to Merged IFZ
+var tcg=tc.select('greenness').map(function(image) {
+  return image;
+}).map(addVariables)
+var MergeIFZm25=MergeIFZ.select('IFZ').map(function(image) {
+  var imgm25=image.subtract(ee.Image.constant(3))
+  return imgm25
+  .updateMask(imgm25.gte(0))
+  .rename('IFZ2')
+  .float()
+  .set('system:time_start',image.get('system:time_start'));
+})
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// Data inspection
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// For any given point, Plot the time series change of the selected raster value.
+{
+print(MergeIFZ,"MergedIFZ")
+
+
+var TimeSeries = ui.Chart.image.seriesByRegion({
+  imageCollection: MergeIFZ,
+  regions: browsing,
+  reducer: ee.Reducer.mean(),
+  scale: 30,
+  xProperty: 'system:time_start'})//It is important that this is the column in the fusion table 
+  //with your data point identifiers
+  .setChartType('ScatterChart')
+  .setOptions({
+    title: 'Time series change in Integrated Forest Z score',
+    vAxis: {title: 'IFZ'},
+    lineWidth: 1,
+    pointSize: 4});
+print(TimeSeries)
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//Moving Average
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// Compupte moving average from Merge IFZ using MovingAvg function.
+//I'm not sure if I'm going to use the following code.
+{
+var MovAvgIFZ=Foo.movavg(MergeIFZ,'IFZ',MergeIFZm25,'IFZ2',avgRange,avgRange,tolpar,//tolpar
+['IFZ','MeanIFZBackward','MeanIFZForward','tolLimit','distMedian','magnitude'])
+// print(MovAvgIFZ,"MovingIFZ")
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// Harmonic Regression
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+/*
+var IFZRasters=Foo.FaE(MergeIFZ,'IFZ',avgRange).select(['fit','RMSE','t','amplitude']).map(function(image){return image.rename(['fit','RMSE','t','amplitude'])})
+var TCGRasters=Foo.FaE(tcg,'greenness',avgRange).select(['fit','RMSE','t','amplitude']).map(function(image){return image.rename(['fit_g','RMSE_g','t_g','amplitude_g'])})
+print(IFZRasters,'ifz raster bands')
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// Join all the raster data
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+print(TCGRasters,'tasseled cap greenness raste// join IFZ moving average and IFZ harmonic regression coefficients r bands')
+var joined=Foo.innerJoin(MovAvgIFZ,IFZRasters)// join thIFZ data and tcg data.
+var finalRaster=Foo.innerJoin(joined,TCGRasters)
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// Disturbance Detection
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@print(finalRaster)
+*/
+var finalRaster=MovAvgIFZ
+var dist=ee.ImageCollection(finalRaster)
+//var dist=ee.ImageCollection(MovAvgIFZ)
+//.filterDate('1987-01-01','2016-12-31')
+.filterDate('1984-06-01','2019-12-31')
+.map(function(image) {
+  var mib=image.select(['MeanIFZBackward'])
+  var mif=image.select(['MeanIFZForward'])
+  var tl=image.select(['tolLimit'])
+  var dm=image.select(['distMedian'])
+  var mg=image.select(['magnitude'])
+  //var amplitude = image.select(['amplitude']);   // Scaled by 5 to get it close to 1
+  //var amplitude_g = image.select(['amplitude_g']); 
+  var year= ee.Number(ee.Date(image.get('system:time_start')).get('year'))
+  var yearband=ee.Image.constant(ee.Number(year)).float()
+  return image
+   .addBands(ee.Image(yearband))
+   //.addBands(amplitude)
+   //.addBands(amplitude_g)
+  .set('system:time_start',image.get('system:time_start'))
+  .updateMask(ee.Image(mib).lt(3))
+  .updateMask(ee.Image(mif).gt(mifpar))
+  .updateMask(ee.Image(mg).gt(3))
+  .updateMask(ee.Image(tl)
+  //.multiply(ee.Image.constant(3))
+  .lt(ee.Image(dm)))
+})
+// print(dist,'dist')
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// create final products
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// Last disturbance record
+var disturbance=dist.select('constant')
+.filterDate(outputDateStart,outputDateEnd)
+var accasspoints=accasspoints.filterBounds(expBounds)
+var distyear=disturbance.mosaic()
+var distyearAccAss=
+ee.Image(distyear)
+.sampleRegions(accasspoints,null,30,distyear.Projection,4)
+
+
+//
+
+/*
+// Amplitude of the moving average in the last 3 year before the last disturbance
+var amp=dist.select('amplitude')
+.filterDate('1987-06-01','2016-12-31')
+var ampNdistyear=amp.mosaic()
+// Amplitude of tasselled cap Greenness in the last 3 year before the last disturbance
+var ampG=dist.select('amplitude_g')
+.filterDate('1987-06-01','2016-12-31')
+var ampGNdistyear=ampG.mosaic()
+*/
+
+// Historical disturbance record
+
+var ods=outputDateStart.get('year').getInfo()
+var ode=outputDateEnd.get('year').getInfo()
+var years = ee.List.sequence(ods, ode)
+var histDistAnnual = years.map(function(y) {
+  var start = ee.Date.fromYMD(y, 1, 1)
+  var stop = start.advance(1, 'year')
+  
+  return disturbance.filterDate(start, stop).mean().set('Year',y)
+})
+histDistAnnual = ee.ImageCollection(histDistAnnual)
+print(histDistAnnual)
+var emptyImage=ee.Image([])
+var histDist = ee.Image(histDistAnnual
+.iterate(function(image, res) {
+	return ee.Image(res).addBands(image)
+// Date table for historical disturbance record(res).addBands(image);
+}, emptyImage));
+
+
+var time_SPI = ee.List(ee.ImageCollection(disturbance).aggregate_array("system:time_start"));
+var fc = ee.FeatureCollection(time_SPI.map(function(date){
+  return ee.Feature(null, {date:date})
+}));
+// Amplitude, fit and RMSE at the last disturbance year
+Map.addLayer(distyear,{},'Disturbance Year')
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// Export the final products
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+Export.image.toDrive({
+  image:distyear,
+  description:'lastDist-'+ods+'-'+ode+'-p'+path+'-r'+row+'-MovAvgRange'+avgRange+'-mif'+mifpar+'-tol'+tolpar,
+  scale: 30,
+  region: expBounds
+})
+// exporting historical disturbance 
+Export.image.toDrive({
+  image:histDist,
+  description:'histDist-1987-2016'+'-p'+path+'-r'+row+'-MovAvgRange'+avgRange+'-mif'+mifpar+'-tol'+tolpar,
+  scale: 30,
+  region:expBounds
+  //,maxPixels: 1e13
+})
+Export.table.toDrive({
+    collection: distyearAccAss,
+    description: 'SampledAccAssPoints-1987-2016'+'-p'+path+'-r'+row+'-MovAvgRange'+avgRange+'-mif'+mifpar+'-tol'+tolpar,
+    fileFormat: 'CSV'
+  });
+/*
+Export.image.toDrive({
+  image:ampNdistyear,
+  description:'amplitudeMergedIFZ-1987-2016'+'-p'+path+'-r'+row+'-MovAvgRange'+avgRange+'-mif'+mifpar+'-tol'+tolpar,
+  scale: 30,
+  region:expBounds
+  //,maxPixels: 1e13
+})
+Export.image.toDrive({
+  image:ampGNdistyear,
+  description:'amplitudeTCG-1987-2016'+'-p'+path+'-r'+row+'-MovAvgRange'+avgRange+'-mif'+mifpar+'-tol'+tolpar,
+  scale: 30,
+  region:expBounds
+  //,maxPixels: 1e13
+})
+
+
+
+Export.table.toDrive({
+    collection: fc,
+    description: 'SceneDate-1987-2016'+'-p'+path+'-r'+row+'-MovAvgRange'+avgRange+'-mif'+mifpar+'-tol'+tolpar,
+    fileFormat: 'CSV'
+  });
+*/
