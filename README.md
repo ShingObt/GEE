@@ -1,8 +1,6 @@
-This repository is created to present my code samples of my two projects. All the code is available and can be executed from the Google Earth Engine javaScript API. 
+
+This repository is created to present my code samples of my two projects. All the code is available and can be executed from the Google Earth Engine javaScript API.
 https://code.earthengine.google.com/?accept_repo=users/sobata5632/harmonic
-
-
-
 
 # Estimation of the volume of forest stands in Georgia using machine learning and dense Landsat imagery
 The final outcome is the map shown here. 
