@@ -1,3 +1,6 @@
+This repository is created to present my code samples of my two projects. All the code is available and can be executed from the Google Earth Engine javaScript API.
+https://code.earthengine.google.com/?accept_repo=users/sobata5632/harmonic
+
 # Estimation of the volume of forest stands in Georgia using machine learning and dense Landsat imagery
 The final outcome is the map shown here. 
 
@@ -21,4 +24,3 @@ The tabular data is used to perform the random forest regression. scikit-learn i
 
 ## Create a volume estimation map
 Using the regressor developed by the random forest regression, a volume estimation map is created for each Landsat tile. The data can be used to estimate the volume of single stand volume. 
-# GEE
