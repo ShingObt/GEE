@@ -2,8 +2,21 @@
 This repository is created to present my code samples of my two projects. All the code is available and can be executed from the Google Earth Engine javaScript API.
 https://code.earthengine.google.com/?accept_repo=users/sobata5632/harmonic
 
+The project samples presented are 
+
+1. Estimation of the last disturbance year in Georgia using time series Landsat imagery
+2. Estimation of the volume of forest stands in Georgia using machine learning and dense Landsat imagery
+
+# Estimation of the last disturbance year in Georgia using time series Landsat imagery
+<img src="images/mergedDiDeMap.jpg" alt="drawing" width="300"/>
+
+The objective of this project is to create a forest disturbance record for the years 1984-2016, through the use of all available Landsat TM/ETM data. Two primary disturbance detection methods, a threshold algorithm and a statistical boundary method, were combined to develop a robust estimation of recent forest disturbance history. 
+
+
 # Estimation of the volume of forest stands in Georgia using machine learning and dense Landsat imagery
-The final outcome is the map shown here. 
+<img src="images/volest.png" alt="drawing" width="300"/>
+
+The objective of this project is to estimate the growing stock volume of the forest stand with 30-meter spatial resolution in Georgia, United States.
 
 ## Harmonic data creation
  `CustomExport` script creates a multi-layer raster data that contains (1) Coefficients of the harmoinic regression on an arbitrary band or index derive from dense time series Landsat 5 and 7 imagery, (2)fitted value of the harmonic regression. 
