@@ -12,6 +12,7 @@ The project samples presented are
 
 The objective of this project is to create a forest disturbance record for the years 1984-2016, through the use of all available Landsat TM/ETM data. Two primary disturbance detection methods, a threshold algorithm and a statistical boundary method, were combined to develop a robust estimation of recent forest disturbance history. 
 
+`DisturbanceDetectionAlgorithm` is the GEE script to create the raster data of which pixel value represents the last disturbance year of the forest stands. 
 
 # Estimation of the volume of forest stands in Georgia using machine learning and dense Landsat imagery
 <img src="images/volest.jpg" alt="drawing" width="300"/>
