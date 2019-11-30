@@ -14,7 +14,7 @@ The objective of this project is to create a forest disturbance record for the y
 
 
 # Estimation of the volume of forest stands in Georgia using machine learning and dense Landsat imagery
-<img src="images/volest.png" alt="drawing" width="300"/>
+<img src="images/volest.jpg" alt="drawing" width="300"/>
 
 The objective of this project is to estimate the growing stock volume of the forest stand with 30-meter spatial resolution in Georgia, United States.
 
